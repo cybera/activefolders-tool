@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+# Usage: activefolders push [<destination>]
+# Summary: Push current directory to the destination
+# Help: Upload current directory recursively, then initiate a transfer to the destination
+
+import requests
+import sys
+import os
+import os.path
+import json
+import time
+
+# Uploader function for os.path.walk
+def upload(ext, dirname, names):
+    for name in names:
+        sourcepath = os.path.join(dirname, name)
+        destpath = folder_url + "/files" + sourcepath[1:]
+        if not os.path.isdir(sourcepath):
+            with open(sourcepath) as f:
+                r = requests.put(destpath, data=f.read())
+                print("\t"+sourcepath)
+
+
+# Get config
+with open('/tmp/af-cache', 'r') as f:
+    try:
+        config = json.load(f)
+        url = config['url']
+    except ValueError:
+        print("No server connection found")
+        sys.exit(1)
+
+
+# Parse arguments
+try:
+    destination, user, keyfile  = sys.argv[1:]
+    with open(keyfile) as f:
+        key = f.read()
+except ValueError:
+    print("Provide all three arguments please: destination, username, keyfile")
+    sys.exit(0)
+
+
+r = requests.post(url + "/create_folder")
+if r.status_code / 100 is 2:
+    folder = r.text
+else:
+    print "Error creating folder, code", r.status_code
+    sys.exit(r.status_code)
+
+folder_url = url + "/folders/" + folder
+
+
+# Upload the current directory
+print("Uploading to %s" % folder)
+time.sleep(1)
+os.path.walk('.', upload, None)
+
+# Provide a destination to send files to
+req = {
+    'result_files': ['results.txt'],
+    'credentials':{
+        'user': user,
+        'private_key':key
+    }
+}
+params = {'dst':destination}
+headers = {'Content-Type':"application/json"}
+r = requests.post(folder_url+'/destinations', data=json.dumps(req), params=params, headers=headers)
+
+# Start transfer
+requests.post(folder_url+'/start_transfers')

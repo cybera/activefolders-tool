@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+# Usage: activefolders connect [<url>]
+# Summary: Connect to the server
+# Help: Try to reach the dtnd and remember the url if successful
+
+import requests
+import sys
+import os
+import json
+
+if len(sys.argv) <= 1:
+    print("Please provide a valid url")
+    sys.exit(0)
+url = sys.argv[1]
+
+try:
+    r = requests.get(url + "/destinations")
+except requests.exceptions.ConnectionError:
+    print("Please provide a valid url")
+    sys.exit(0)
+
+if r.status_code is not 200:
+    print("Cannot connect, check your url")
+    sys.exit(1)
+reply = r.json()
+print("Connection established")
+print("Reachable destinations:")
+for k in reply:
+    print("\t"+k)
+
+with open('/tmp/af-cache', 'r') as f:
+    try:
+        config = json.load(f)
+    except ValueError:
+        config = {}
+
+with open('/tmp/af-cache', 'w') as f:
+    if config.get('url'):
+        print("\nReplacing old server entry %s -> %s" % (config['url'], url))
+    config['url'] = url
+    config['destinations'] = [k for k in reply]
+    json.dump(config, f, indent=4)
+
+

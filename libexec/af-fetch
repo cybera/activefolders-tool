@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+# Usage: af fetch [<folder-id>]
+# Summary: Fetch folder contents into current directory
+# Help: Download remote folder recursively, overwriting all conflicts
+
+import requests
+import sys
+import os
+import os.path
+import json
+import time
+
+
+def fetch(path=''):
+    url = os.path.join(base, path)
+    print(url)
+    r = requests.get(url)
+    if r.status_code is 201:
+        if path:
+            os.makedirs(path)
+        for obj in r.json():
+            new_path = os.path.join(path, obj)
+            fetch(new_path)
+    elif r.status_code is 200:
+        with open(path, 'w+') as f:
+            f.write(r.content)
+
+
+with open('/tmp/af-cache', 'r') as f:
+    try:
+        config = json.load(f)
+    except ValueError:
+        print("No server connection found")
+        sys.exit(1)
+
+if len(sys.argv) <= 1:
+    print("Please provide a valid folder id")
+    sys.exit(0)
+
+folder = sys.argv[1]
+base = config['url'] + "/folders/" + folder + "/files"
+
+print("Downloading %s" % folder)
+time.sleep(1)
+fetch()
