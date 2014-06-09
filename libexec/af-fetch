@@ -12,35 +12,39 @@ import json
 import time
 
 
-def fetch(path=''):
-    url = os.path.join(base, path)
-    print(url)
+def fetch(source, destination, path=''):
+    url = os.path.join(source, path)
+    location = os.path.join(destination, path)
     r = requests.get(url)
     if r.status_code is 201:
-        if path:
-            os.makedirs(path)
+        os.makedirs(location)
         for obj in r.json():
             new_path = os.path.join(path, obj)
             fetch(new_path)
     elif r.status_code is 200:
-        with open(path, 'w+') as f:
+        with open(location, 'w+') as f:
             f.write(r.content)
 
+# Get config
+config = read_config(os.path.expanduser("~/.activefolders"))
+if os.path.exists("./.activefolders"):
+    config = read_config("./.activefolders")
 
-with open('/tmp/af-cache', 'r') as f:
-    try:
-        config = json.load(f)
-    except ValueError:
-        print("No server connection found")
-        sys.exit(1)
-
-if len(sys.argv) <= 1:
-    print("Please provide a valid folder id")
+if config:
+    url = config['url']
+else:
+    print("No connection found, please run `connect` first")
     sys.exit(0)
 
-folder = sys.argv[1]
-base = config['url'] + "/folders/" + folder + "/files"
+if config.get('folder'):
+    print("This directory already has been uploaded into folder " + config['folder'])
+    sys.exit(0)
 
-print("Downloading %s" % folder)
-time.sleep(1)
-fetch()
+# Parse arguments
+if len(sys.argv) <= 1:
+    folder = sys.argv[1]
+    source = os.path.join(config['url'], "folders", folder, "files")
+    destination = os.path.join("./results", folder)
+    print("Downloading %s" % folder)
+    time.sleep(1)
+    fetch(source, destination)
