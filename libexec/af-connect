@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Usage: activefolders connect [<url>]
+# Usage: activefolders connect <url>
 # Summary: Connect to the server
 # Help: Try to reach the dtnd and remember the url if successful
 

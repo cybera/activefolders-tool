@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # Usage: af fetch [<folder-id>]
 # Summary: Fetch folder contents into current directory
-# Help: Download remote folder recursively, overwriting all conflicts
+# Help: Check if results are delivered and download all and any results folders.
+# <folder-id> overrides this behaviour, downloading any provided id.
 
 import requests
 import sys
