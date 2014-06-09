@@ -28,13 +28,13 @@ print("Reachable destinations:")
 for k in reply:
     print("\t"+k)
 
-with open('/tmp/af-cache', 'r') as f:
-    try:
+try:
+    with open(os.path.expanduser('~/.activefolders'), 'r') as f:
         config = json.load(f)
-    except ValueError:
-        config = {}
+except (ValueError, IOError):
+    config = {}
 
-with open('/tmp/af-cache', 'w') as f:
+with open(os.path.expanduser('~/.activefolders'), 'w') as f:
     if config.get('url'):
         print("\nReplacing old server entry %s -> %s" % (config['url'], url))
     config['url'] = url

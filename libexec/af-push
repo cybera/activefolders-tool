@@ -10,9 +10,18 @@ import os.path
 import json
 import time
 
+def read_config(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (IOError,ValueError):
+        return None
+
 # Uploader function for os.path.walk
 def upload(ext, dirname, names):
     for name in names:
+        if name is '.activefolders':
+            continue
         sourcepath = os.path.join(dirname, name)
         destpath = folder_url + "/files" + sourcepath[1:]
         if not os.path.isdir(sourcepath):
@@ -22,14 +31,19 @@ def upload(ext, dirname, names):
 
 
 # Get config
-with open('/tmp/af-cache', 'r') as f:
-    try:
-        config = json.load(f)
-        url = config['url']
-    except ValueError:
-        print("No server connection found")
-        sys.exit(1)
+config = read_config(os.path.expanduser("~/.activefolders"))
+if os.path.exists("./.activefolders"):
+    config = read_config("./.activefolders")
 
+if config:
+    url = config['url']
+else:
+    print("No connection found, please run `connect` first")
+    sys.exit(0)
+
+if config.get('folder'):
+    print("This directory already has been uploaded into folder " + config['folder'])
+    sys.exit(0)
 
 # Parse arguments
 try:
@@ -70,3 +84,9 @@ r = requests.post(folder_url+'/destinations', data=json.dumps(req), params=param
 
 # Start transfer
 requests.post(folder_url+'/start_transfers')
+
+# Save cache
+config['folder'] = folder
+config['destination'] = destination
+with open("./.activefolders", "w") as f:
+    json.dump(config, f, indent=4)
