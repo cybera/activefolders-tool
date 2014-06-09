@@ -12,18 +12,29 @@ import json
 import time
 
 
+def read_config(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (IOError,ValueError):
+        return None
+
+
 def fetch(source, destination, path=''):
-    url = os.path.join(source, path)
-    location = os.path.join(destination, path)
-    r = requests.get(url)
+    remote = os.path.join(source, path)
+    local = os.path.join(destination, path)
+    r = requests.get(remote)
     if r.status_code is 201:
-        os.makedirs(location)
+        os.makedirs(local)
         for obj in r.json():
             new_path = os.path.join(path, obj)
-            fetch(new_path)
+            fetch(source, destination, new_path)
     elif r.status_code is 200:
-        with open(location, 'w+') as f:
+        with open(local, 'w+') as f:
             f.write(r.content)
+    else:
+        print(r.status_code)
+
 
 # Get config
 config = read_config(os.path.expanduser("~/.activefolders"))
@@ -36,15 +47,36 @@ else:
     print("No connection found, please run `connect` first")
     sys.exit(0)
 
-if config.get('folder'):
-    print("This directory already has been uploaded into folder " + config['folder'])
-    sys.exit(0)
 
 # Parse arguments
-if len(sys.argv) <= 1:
+if len(sys.argv) > 1:
     folder = sys.argv[1]
-    source = os.path.join(config['url'], "folders", folder, "files")
+    source = os.path.join(url, "folders", folder, "files")
     destination = os.path.join("./results", folder)
-    print("Downloading %s" % folder)
-    time.sleep(1)
     fetch(source, destination)
+    sys.exit(0)
+
+
+if not config.get('folder'):
+    print("This directory hasn't been uploaded yet")
+    sys.exit(0)
+
+folder = config['folder']
+
+# Request a status update
+r = requests.get(os.path.join(url, "folders", folder, "check_results"))
+if r.status_code / 100 is not 2:
+    print("Something went wrong")
+    print(r.status_code)
+
+# Check for results folders and download if any are present
+r = requests.get(os.path.join(url, "folders", folder, "results" ))
+for destination, results_folder in r.json().items():
+    if results_folder:
+        print(destination+"\t"+results_folder)
+        source = os.path.join(url, "folders", results_folder, "files")
+        destination = os.path.join("./results", destination)
+        fetch(source, destination)
+    else:
+        print(destination+"\t"+"Nothing yet")
+
