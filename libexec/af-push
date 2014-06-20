@@ -85,7 +85,7 @@ r = requests.post(folder_url+'/destinations', data=json.dumps(req), params=param
 
 # Start transfer
 requests.post(folder_url+'/start_transfers')
-time.sleep(3)
+time.sleep(5)
 requests.post(folder_url+'/start_transfers')
 
 # Save cache
