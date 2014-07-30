@@ -63,12 +63,6 @@ if not config.get('folder'):
 
 folder = config['folder']
 
-# Request a status update
-r = requests.get(os.path.join(url, "folders", folder, "check_results"))
-if r.status_code / 100 is not 2:
-    print("Something went wrong")
-    print(r.status_code)
-
 # Check for results folders and download if any are present
 r = requests.get(os.path.join(url, "folders", folder, "results" ))
 for destination, results_folder in r.json().items():

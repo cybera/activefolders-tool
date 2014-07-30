@@ -73,19 +73,17 @@ os.path.walk('.', upload, None)
 
 # Provide a destination to send files to
 req = {
-    'result_files': ['results.txt'],
     'credentials':{
         'user': user,
         'private_key':key
-    }
+    },
+    'check_for_results': True
 }
 params = {'dst':destination}
 headers = {'Content-Type':"application/json"}
 r = requests.post(folder_url+'/destinations', data=json.dumps(req), params=params, headers=headers)
 
 # Start transfer
-requests.post(folder_url+'/start_transfers')
-time.sleep(10)
 requests.post(folder_url+'/start_transfers')
 
 # Save cache
