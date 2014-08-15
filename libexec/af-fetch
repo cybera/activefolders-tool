@@ -5,6 +5,7 @@
 # <folder-id> overrides this behaviour, downloading any provided id.
 
 import requests
+from requests.auth import HTTPBasicAuth as rauth
 import sys
 import os
 import os.path
@@ -23,7 +24,7 @@ def read_config(path):
 def fetch(source, destination, path=''):
     remote = os.path.join(source, path)
     local = os.path.join(destination, path)
-    r = requests.get(remote)
+    r = requests.get(remote, verify=False, auth=auth)
     if r.status_code is 201:
         os.makedirs(local)
         for obj in r.json():
@@ -43,6 +44,7 @@ if os.path.exists("./.activefolders"):
 
 if config:
     url = config['url']
+    auth = rauth(config['secret'], None)
 else:
     print("No connection found, please run `connect` first")
     sys.exit(0)
@@ -64,7 +66,7 @@ if not config.get('folder'):
 folder = config['folder']
 
 # Check for results folders and download if any are present
-r = requests.get(os.path.join(url, "folders", folder, "results" ))
+r = requests.get(os.path.join(url, "folders", folder, "results" ), varify=False, auth=auth)
 for destination, results_folder in r.json().items():
     if results_folder:
         print(destination+"\t"+results_folder)

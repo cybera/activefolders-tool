@@ -4,23 +4,30 @@
 # Help: Try to reach the dtnd and remember the url if successful
 
 import requests
+from requests.auth import HTTPBasicAuth as rauth
 import sys
 import os
 import json
 
-if len(sys.argv) <= 1:
-    print("Please provide a valid url")
-    sys.exit(0)
+usage = "af connect <url> <secret>"
+if len(sys.argv) <= 2:
+    print(usage)
+    sys.exit(1)
 url = sys.argv[1]
+secret = sys.argv[2]
 
 try:
-    r = requests.get(url + "/destinations")
+    r = requests.get(url + "/destinations", verify=False, auth=rauth(secret, None))
 except requests.exceptions.ConnectionError:
-    print("Please provide a valid url")
-    sys.exit(0)
+    print("Invalid url")
+    sys.exit(1)
 
-if r.status_code is not 200:
-    print("Cannot connect, check your url")
+if r.status_code != 200:
+    if r.status_code == 401:
+        print("Bad token")
+    else:
+        print("Wrong url")
+        print(r.status_code)
     sys.exit(1)
 reply = r.json()
 print("Connection established")
@@ -38,6 +45,7 @@ with open(os.path.expanduser('~/.activefolders'), 'w') as f:
     if config.get('url'):
         print("\nReplacing old server entry %s -> %s" % (config['url'], url))
     config['url'] = url
+    config['secret'] = secret
     config['destinations'] = [k for k in reply]
     json.dump(config, f, indent=4)
 
