@@ -50,7 +50,7 @@ if config.get('folder'):
 
 # Parse arguments
 try:
-    destination, user, keyfile  = sys.argv[1:]
+    destination, user, keyfile  = sys.argv[1:4]
     with open(keyfile) as f:
         key = f.read()
 except ValueError:
@@ -81,6 +81,19 @@ req = {
     },
     'check_for_results': True
 }
+
+try:
+    results_destination, results_user, results_keyfile = sys.argv[4:7]
+    with open(results_keyfile) as f:
+        key = f.read()
+    req['results_destination'] = results_destination
+    req['results_credentials'] = {
+        'user': results_user,
+        'private_key': key
+    }
+except ValueError:
+    pass
+
 params = {'dst':destination}
 headers = {'Content-Type':"application/json"}
 r = requests.post(folder_url+'/destinations', data=json.dumps(req), params=params, headers=headers, verify=False, auth=auth)
