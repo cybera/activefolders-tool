@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+# Usage: activefolders user <add|del> <username> | show [username]
+# Summary: Add or delete active folders user
+# Help: This interaction is accessible only to root tokens
+
+
+import requests
+from requests.auth import HTTPBasicAuth as rauth
+import sys
+import os
+import os.path
+import json
+
+
+def read_config(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (IOError, ValueError):
+        return None
+
+# Get config
+config = read_config(os.path.expanduser("~/.activefolders"))
+if os.path.exists("./.activefolders"):
+    config = read_config("./.activefolders")
+if config:
+    url = config['url']
+    auth = rauth(config['secret'], None)
+else:
+    print("No connection found, please run `connect` first")
+    sys.exit(0)
+
+# Parse arguments
+try:
+    action = sys.argv[1]
+    try:
+        username = sys.argv[2]
+    except (ValueError, IndexError):
+        if action == "show":
+            username = None
+        else:
+            raise
+    if action not in ["add", "del", "show"]:
+        raise ValueError("Wrong action")
+except ValueError:
+    print("Usage: af user <add|del|show> <username>")
+    sys.exit(0)
+
+if username:
+    user_url = os.path.join(url, "users", username)
+else:
+    user_url = os.path.join(url, "users")
+
+if action == "add":
+    r = requests.post(user_url, verify=False, auth=auth)
+elif action == "del":
+    r = requests.delete(user_url, verify=False, auth=auth)
+elif action == "show":
+    r = requests.get(user_url, verify=False, auth=auth)
+
+if r.status_code / 100 is 2:
+    print(r.text)
+else:
+    print "Error code: ", r.status_code
+    sys.exit(r.status_code)
