@@ -66,7 +66,7 @@ if not config.get('folder'):
 folder = config['folder']
 
 # Check for results folders and download if any are present
-r = requests.get(os.path.join(url, "folders", folder, "results" ), varify=False, auth=auth)
+r = requests.get(os.path.join(url, "folders", folder, "results" ), verify=False, auth=auth)
 for destination, results_folder in r.json().items():
     if results_folder:
         print(destination+"\t"+results_folder)
